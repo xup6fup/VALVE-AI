@@ -88,23 +88,31 @@ The project produces main Figures 2–5, Extended Data Figures 1–10, Supplemen
 
 All randomized participants are analyzed in their assigned groups, with control as the regression reference. Each outcome uses its nonmissing eligible observations as the denominator. The supplied final values are used directly: 1 denotes an event, 0 denotes no event, and blank values remain missing or not applicable. No imputation or participant deduplication is performed.
 
-Treatment effects are estimated using unadjusted binomial logistic regression with Wald 95% confidence intervals and two-sided coefficient P values. If an estimable comparison in an outcome/subgroup block has zero events in one arm, the block uses Firth penalized logistic regression with profile penalized-likelihood confidence intervals and penalized likelihood-ratio P values. Comparisons with zero events in both arms are not estimable and do not, by themselves, switch other comparisons to Firth regression.
+Treatment effects are estimated using unadjusted binomial logistic regression with Wald 95% confidence intervals and two-sided Wald P values. Firth penalized logistic regression is selected for an entire analysis block if any treatment comparison in that block has at least one participant in each arm and zero events in exactly one arm. Every estimable treatment effect and, where applicable, the global interaction test in that block then uses Firth inference. Firth treatment effects use profile penalized-likelihood 95% confidence intervals and penalized likelihood-ratio P values. Comparisons with an empty arm or zero events in both arms are not estimable and do not, by themselves, trigger Firth regression.
 
-Treatment-by-subgroup interactions are evaluated by a global likelihood-ratio comparison of interaction and additive models. When Firth regression is required, the interaction coefficients are jointly tested within the full penalized model. An empty group-by-subgroup cell or a stratum with zero events in both arms yields a nonestimable interaction.
+The analysis blocks are defined in `R/04_figures.R` as follows:
+
+| Figure | Comparisons sharing one analysis block |
+|---|---|
+| Figure 2 | The overall intervention-versus-control comparison for one outcome. Each outcome is a separate block. |
+| Figure 3 | The high-risk and low-risk intervention-versus-control comparisons for one outcome, together with their global treatment-by-AI-ECG-risk interaction. |
+| Figures 4 and 5 | The overall comparison in panel a and the high-risk comparison in panel b for one outcome within the same figure. |
+| Extended Data Figures 2 and 3 | All categories of one subgroup variable and their global treatment-by-subgroup interaction for the primary outcome, separately within each figure and its analysis population. |
+| Extended Data Figure 4 | All categories of one ECG subgroup variable and their global treatment-by-subgroup interaction for one outcome. TTE utilization and the primary outcome form separate blocks. |
+
+A Firth trigger does not extend to another outcome, subgroup variable, or figure outside the affected block.
+
+Treatment-by-subgroup interactions use the fitting method selected for their analysis block. Under ordinary logistic regression, the global interaction P value is obtained by a likelihood-ratio comparison of the full interaction model and the additive model. Under Firth regression, all treatment-by-subgroup interaction coefficients are jointly constrained to zero in a penalized likelihood-ratio test using the full model's Jeffreys penalty, implemented with `logistf::logistftest`. The degrees of freedom equal the number of tested interaction coefficients. An interaction is not estimable if there are fewer than two subgroup levels, an empty treatment-arm-by-subgroup cell, or any stratum with zero events in both arms; estimable treatment effects in other strata are retained. Failed or nonconvergent fits are reported as not estimable and do not independently trigger a switch to Firth regression.
 
 Diagnostic yields and conditional action proportions use two-sided Wilson score 95% confidence intervals without continuity correction. Pathway-yield comparisons use two-sided Fisher exact tests; multilevel comparisons use global Fisher–Freeman–Halton tests. An empty denominator is not estimable. When both groups have observed participants but no events, P = 1.
+
+Clinical record review confirmed that all 178 participants with VHD were diagnosed on their first completed TTE after the index time; no participant had a negative first post-index TTE followed by a VHD-positive subsequent TTE within the 90-day follow-up. Thus, in this dataset, the prepared 90-day `outcome_vhd` flag agrees with VHD detection on the first post-index TTE for diagnostic-yield analyses. The scripts use the prepared outcome flag directly; the confirmation above is based on clinical record review.
 
 Table 1 and Supplemental Table 1 are descriptive. Supplemental Table 2 uses two-sided Student t tests with pooled variance for continuous variables, including ECG intervals displayed as median (IQR). Supplemental Tables 3 and 4 use one-way ANOVA for continuous variables. Each multilevel categorical variable receives one global test, shown on its parent row.
 
 Categorical comparisons in Supplemental Tables 2–4 first use `stats::fisher.test(..., workspace = 200000, simulate.p.value = FALSE)`. Only a computation error triggers `stats::chisq.test(..., simulate.p.value = FALSE, correct = TRUE)`: Pearson's asymptotic chi-squared test, with Yates's continuity correction for 2 × 2 tables. These fallback P values are marked with §. Small expected counts do not, by themselves, trigger the fallback. Constant categorical variables retain a zero-count complement for the Fisher test, yielding P = 1.000. No simulated P values are used.
 
 The chi-squared fallback applies only to the categorical comparisons in Supplemental Tables 2–4. Diagnostic-yield and conditional-action comparisons continue to use Fisher exact tests; a failed exact calculation is reported as not estimable.
-
-### Table and figure notation
-
-Table values are mean ± SD, median (IQR), or n (%), as indicated by the row labels, and use available observations for each variable. ECG interval medians and IQRs are displayed as integers. In the tables, † denotes NT-proBNP ≥900 pg/mL within three years, ‡ denotes NT-proBNP ≥300 pg/mL in sinus rhythm or ≥600 pg/mL in atrial fibrillation, and § marks a Pearson chi-squared fallback P value. Prior LVEF categories include ≤40%, 41–49%, and no documented reduction; the last category does not imply a measured LVEF ≥50%. In regression figures, † identifies Firth-based inference. NE denotes not estimable, and Ref. denotes the reference pathway.
-
-SD, standard deviation; IQR, interquartile range; AI-ECG, artificial intelligence-enabled electrocardiogram; TTE, transthoracic echocardiography; VHD, valvular heart disease; LVEF, left ventricular ejection fraction; LVEDD, left ventricular end-diastolic diameter; PASP, pulmonary artery systolic pressure; NT-proBNP, N-terminal pro-B-type natriuretic peptide.
 
 ## Variable definitions
 
